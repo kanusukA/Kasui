@@ -800,7 +800,9 @@ class MainActivity : ComponentActivity() {
                             DynamicSmoothCornerShape(
                                 topRadiusProvider = {
                                     val fraction = playerViewModel.playerContentExpansionFraction.value
-                                    if (navBarStyle == NavBarStyle.FULL_WIDTH) {
+                                    if (navBarStyle == NavBarStyle.DEFAULT) {
+                                        10.dp
+                                    } else if (navBarStyle == NavBarStyle.FULL_WIDTH) {
                                         lerp(navBarCornerRadius.dp, 26.dp, fraction)
                                     } else if (showPlayerContentArea) {
                                         if (fraction < 0.2f) {
@@ -813,7 +815,13 @@ class MainActivity : ComponentActivity() {
                                     }
                                 },
                                 bottomRadiusProvider = {
-                                    if (navBarStyle == NavBarStyle.FULL_WIDTH) 0.dp else animatedNavBarCornerRadius
+                                    if (navBarStyle == NavBarStyle.DEFAULT) {
+                                        animatedNavBarCornerRadius
+                                    } else if (navBarStyle == NavBarStyle.FULL_WIDTH) {
+                                        0.dp
+                                    } else {
+                                        animatedNavBarCornerRadius
+                                    }
                                 }
                             )
                         }

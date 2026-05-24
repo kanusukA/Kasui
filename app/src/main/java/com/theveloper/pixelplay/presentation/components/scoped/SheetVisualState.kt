@@ -100,29 +100,49 @@ internal fun rememberSheetVisualState(
         predictiveBackCollapseProgress,
         navBarStyle,
         navBarCornerRadiusDp,
-        isNavBarHidden
+        isNavBarHidden,
+        swipeDismissProgress,
+        currentSheetContentState
     ) {
         {
-            if (showPlayerContentArea) {
-                val collapsedCornerTarget = if (navBarStyle == NavBarStyle.FULL_WIDTH) {
-                    32.dp
-                } else if (isNavBarHidden) {
-                    60.dp
-                } else {
-                    navBarCornerRadiusDp
-                }
+            val collapsedCornerTarget = if (navBarStyle == NavBarStyle.DEFAULT) {
+                navBarCornerRadiusDp
+            } else if (navBarStyle == NavBarStyle.FULL_WIDTH) {
+                32.dp
+            } else if (isNavBarHidden) {
+                60.dp
+            } else {
+                navBarCornerRadiusDp
+            }
 
-                val effectiveFraction = playerContentExpansionFraction.value * (1f - predictiveBackCollapseProgress)
-                val expandedTarget = 0.dp
+            val effectiveFraction = playerContentExpansionFraction.value * (1f - predictiveBackCollapseProgress)
+            val expandedTarget = 0.dp
+            val calculatedNormally = if (showPlayerContentArea) {
                 lerp(collapsedCornerTarget, expandedTarget, effectiveFraction)
             } else {
-                if (navBarStyle == NavBarStyle.FULL_WIDTH) {
+                if (navBarStyle == NavBarStyle.DEFAULT) {
+                    navBarCornerRadiusDp
+                } else if (navBarStyle == NavBarStyle.FULL_WIDTH) {
                     0.dp
                 } else if (isNavBarHidden) {
                     60.dp
                 } else {
                     navBarCornerRadiusDp
                 }
+            }
+
+            if (navBarStyle == NavBarStyle.DEFAULT) {
+                if (currentSheetContentState == PlayerSheetState.COLLAPSED &&
+                    swipeDismissProgress > 0f &&
+                    showPlayerContentArea &&
+                    playerContentExpansionFraction.value < 0.01f
+                ) {
+                    lerp(navBarCornerRadiusDp, 10.dp, swipeDismissProgress)
+                } else {
+                    calculatedNormally
+                }
+            } else {
+                calculatedNormally
             }
         }
     }
@@ -141,10 +161,13 @@ internal fun rememberSheetVisualState(
         predictiveBackCollapseProgress,
         swipeDismissProgress,
         isNavBarHidden,
-        navBarCornerRadiusDp
+        navBarCornerRadiusDp,
+        currentSheetContentState
     ) {
         {
-            val collapsedRadius = if (navBarStyle == NavBarStyle.FULL_WIDTH) {
+            val collapsedRadius = if (navBarStyle == NavBarStyle.DEFAULT) {
+                10.dp
+            } else if (navBarStyle == NavBarStyle.FULL_WIDTH) {
                 32.dp
             } else if (isNavBarHidden) {
                 60.dp
@@ -159,13 +182,21 @@ internal fun rememberSheetVisualState(
                     lerp(collapsedRadius, expandedTarget, effectiveFraction)
                 } else {
                     if (!isPlayingState.value || !hasCurrentSongState.value) {
-                        if (isNavBarHidden) 32.dp else navBarCornerRadiusDp
+                        if (isNavBarHidden) {
+                            32.dp
+                        } else if (navBarStyle == NavBarStyle.DEFAULT) {
+                            10.dp
+                        } else {
+                            navBarCornerRadiusDp
+                        }
                     } else {
                         collapsedRadius
                     }
                 }
 
-            if (navBarStyle == NavBarStyle.FULL_WIDTH) {
+            if (navBarStyle == NavBarStyle.DEFAULT) {
+                calculatedNormally
+            } else if (navBarStyle == NavBarStyle.FULL_WIDTH) {
                 calculatedNormally
             } else if (currentSheetContentState == PlayerSheetState.COLLAPSED &&
                 swipeDismissProgress > 0f &&
