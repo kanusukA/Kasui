@@ -5,14 +5,10 @@ import com.google.ai.client.generativeai.type.generationConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/**
- * Gemini AI provider implementation using the official Android SDK
- */
 class GeminiAiClient(private val apiKey: String) : AiClient {
     
     companion object {
-        // Cheapest/fastest Gemini family default. Keep Gemini choices Flash-only.
-        private const val DEFAULT_GEMINI_MODEL = "gemini-2.5-flash-lite"
+        private const val DEFAULT_GEMINI_MODEL = "gemini-3.1-flash-lite"
     }
     
     private fun createModel(modelName: String, systemPrompt: String, temp: Float = 0.7f): GenerativeModel {
@@ -61,18 +57,15 @@ class GeminiAiClient(private val apiKey: String) : AiClient {
         return withContext(Dispatchers.IO) {
             try {
                 val generativeModel = createModel(model, systemPrompt)
-                // Combine system instruction if possible, or just estimate
                 val response = generativeModel.countTokens(prompt)
                 response.totalTokens
             } catch (e: Exception) {
-                // Return estimation if SDK fails
                 (prompt.length / 4) + (systemPrompt.length / 4)
             }
         }
     }
     
     override suspend fun getAvailableModels(apiKey: String): List<String> {
-        // Models are usually fetched via HTTP as the SDK doesn't expose a listing method
         return withContext(Dispatchers.IO) {
             try {
                 val url = "https://generativelanguage.googleapis.com/v1beta/models?key=$apiKey"
@@ -98,7 +91,6 @@ class GeminiAiClient(private val apiKey: String) : AiClient {
     override suspend fun validateApiKey(apiKey: String): Boolean {
         return withContext(Dispatchers.IO) {
             try {
-                // Use the stable model for validation
                 val generativeModel = GenerativeModel(
                     modelName = DEFAULT_GEMINI_MODEL,
                     apiKey = apiKey
@@ -119,45 +111,38 @@ class GeminiAiClient(private val apiKey: String) : AiClient {
             val modelPattern = """"name":\s*"(models/[^"]+)"""".toRegex()
             val matches = modelPattern.findAll(jsonResponse)
             
+            val blacklist = listOf("-2.0", "-2.5", "-preview", "customtools", "search", "tuning", "-001", "-002")
+            val whitelist = listOf("gemini-3.1-pro-preview")
+            
             for (match in matches) {
                 val fullName = match.groupValues[1]
                 val modelName = fullName.removePrefix("models/")
                 
-                if (isSupportedFlashModel(modelName)) {
+                val isWhitelisted = whitelist.any { modelName == it }
+                val hasForbiddenSuffix = blacklist.any { modelName.contains(it) }
+                val isBlacklisted = hasForbiddenSuffix && !isWhitelisted
+                
+                if (!isBlacklisted && 
+                    (modelName.startsWith("gemini", ignoreCase = true) || 
+                     modelName.startsWith("gemma", ignoreCase = true)) &&
+                    !modelName.contains("embedding", ignoreCase = true)) {
                     models.add(modelName)
                 }
             }
             
-            return if (models.isNotEmpty()) sortFlashModels(models) else getDefaultModels()
+            val defaults = getDefaultModels()
+            return (models + defaults).distinct().sorted()
         } catch (e: Exception) {
             return getDefaultModels()
         }
     }
     
-    private fun isSupportedFlashModel(modelName: String): Boolean {
-        return modelName.startsWith("gemini", ignoreCase = true) &&
-            modelName.contains("flash", ignoreCase = true) &&
-            !modelName.contains("embedding", ignoreCase = true) &&
-            !modelName.contains("image", ignoreCase = true)
-    }
-
-    private fun sortFlashModels(models: List<String>): List<String> {
-        val preferred = getDefaultModels()
-        return models.distinct().sortedWith(
-            compareBy<String> { model ->
-                preferred.indexOf(model).takeIf { it >= 0 } ?: Int.MAX_VALUE
-            }.thenBy { it.lowercase() }
-        )
-    }
-
     private fun getDefaultModels(): List<String> {
         return listOf(
-            "gemini-2.5-flash-lite",
-            "gemini-2.5-flash",
-            "gemini-flash-lite-latest",
-            "gemini-flash-latest",
-            "gemini-2.0-flash-lite",
-            "gemini-2.0-flash"
+            "gemini-3.1-flash-lite",
+            "gemini-3.5-flash",
+            "gemini-3.1-pro-preview",
+            "gemini-flash-latest"
         )
     }
 }
