@@ -26,6 +26,7 @@ import com.theveloper.pixelplay.R
 import com.theveloper.pixelplay.data.model.LibraryTabId
 import com.theveloper.pixelplay.data.model.StorageFilter
 import com.theveloper.pixelplay.presentation.components.MiniPlayerHeight
+import com.theveloper.pixelplay.ui.theme.AbordageFamily
 import com.theveloper.pixelplay.ui.theme.GoogleSansRounded
 
 private data class LibraryEmptySpec(
@@ -174,7 +175,7 @@ internal fun LibraryExpressiveEmptyState(
                 Text(
                     text = stringResource(spec.titleRes),
                     style = MaterialTheme.typography.titleLarge,
-                    fontFamily = GoogleSansRounded,
+                    fontFamily = AbordageFamily,
                     fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center
                 )
@@ -182,6 +183,7 @@ internal fun LibraryExpressiveEmptyState(
                     text = stringResource(spec.subtitleRes),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontFamily =  AbordageFamily,
                     textAlign = TextAlign.Center
                 )
             }

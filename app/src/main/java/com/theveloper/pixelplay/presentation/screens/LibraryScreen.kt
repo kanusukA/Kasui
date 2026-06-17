@@ -247,6 +247,7 @@ import com.theveloper.pixelplay.presentation.components.LibrarySortBottomSheet
 import com.theveloper.pixelplay.presentation.components.subcomps.EnhancedSongListItem
 import com.theveloper.pixelplay.data.service.wear.PhoneWatchTransferState
 import com.theveloper.pixelplay.shared.WearTransferProgress
+import com.theveloper.pixelplay.ui.theme.LazyGlamorFamily
 import java.io.File
 import kotlin.math.abs
 
@@ -840,160 +841,104 @@ fun LibraryScreen(
 
     val headerContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
 
+
     Scaffold(
-        modifier = Modifier.background(brush = gradientBrush),
+        modifier = Modifier.background(color = headerContainerColor),
+        containerColor = headerContainerColor,
+        contentColor = headerContainerColor,
         topBar = {
             Column(
                 modifier = Modifier.background(headerContainerColor)
             ) {
-                TopAppBar(
-                    title = {
-                        if (isCompactNavigation) {
-                            LibraryNavigationPill(
-                                modifier = Modifier,
-                                title = currentTabTitle,
-                                isExpanded = showTabSwitcherSheet,
-                                showIcon = !isSendingToWatch,
-                                iconRes = currentTab.iconRes(),
-                                pageIndex = pagerState.currentPage,
-                                compressForWatchTransfer = isSendingToWatch,
-                                onClick = {
-                                    showTabSwitcherSheet = true
-                                },
-                                onArrowClick = { showTabSwitcherSheet = true }
-                            )
-                        } else {
-                            Text(
-                                modifier = Modifier.padding(start = 8.dp),
-                                text = stringResource(R.string.library_screen_title),
-                                fontFamily = GoogleSansRounded,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontSize = 40.sp,
-                                letterSpacing = 1.sp
-                            )
-                        }
-                    },
-                    actions = {
-                        if (isSendingToWatch) {
-                            val watchTransferProgress = activeWatchTransfer?.progress ?: 0f
-                            val watchTransferPercent = (watchTransferProgress * 100f).toInt().coerceIn(0, 100)
-                            Surface(
-                                modifier = Modifier
-                                    .padding(end = 8.dp)
-                                    .wrapContentWidth()
-                                    .height(40.dp)
-                                    .clip(CircleShape)
-                                    .clickable(enabled = activeWatchTransfer != null) {
-                                        showWatchTransferDialog = true
-                                    },
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.secondaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .padding(horizontal = 8.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.rounded_watch_arrow_down_24),
-                                        contentDescription = stringResource(R.string.library_cd_watch_transfer),
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Text(
-                                        text = stringResource(R.string.common_percentage_text, watchTransferPercent),
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
-                        }
-                        FilledIconButton(
-                            modifier = Modifier.padding(end = 14.dp),
-                            colors = IconButtonDefaults.filledIconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                            ),
-                            onClick = {
-                                navController.navigateSafely(Screen.Settings.route)
-                            }
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.rounded_settings_24),
-                                contentDescription = stringResource(R.string.library_cd_open_settings)
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.Transparent,
-                        scrolledContainerColor = Color.Transparent
-                    )
-                )
-                if (!isCompactNavigation) {
-                    val showTabIndicator = false
-                    PrimaryScrollableTabRow(
-                        selectedTabIndex = currentTabIndex,
-                        containerColor = Color.Transparent,
-                        edgePadding = 12.dp,
-                        indicator = {
-                            if (showTabIndicator) {
-                                TabRowDefaults.PrimaryIndicator(
-                                    modifier = Modifier.tabIndicatorOffset(selectedTabIndex = currentTabIndex),
-                                    height = 3.dp,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        },
-                        divider = {}
-                    ) {
-                        tabTitles.forEachIndexed { index, rawId ->
-                            val tabId = rawId.toLibraryTabIdOrNull() ?: LibraryTabId.SONGS
-                            TabAnimation(
-                                index = index,
-                                title = tabId.storageKey,
-                                selectedIndex = currentTabIndex,
-                                onClick = {
-                                    scope.launch {
-                                        pagerState.animateScrollToPage(
-                                            targetPageForTabIndex(
-                                                currentPage = pagerState.currentPage,
-                                                targetTabIndex = index,
-                                                tabCount = tabTitles.size,
-                                                compactMode = isCompactNavigation
-                                            )
-                                        )
-                                    }
-                                }
-                            ) {
-                                Text(
-                                    text = stringResource(tabId.titleRes).uppercase(),
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = if (currentTabIndex == index) FontWeight.Bold else FontWeight.Medium
-                                )
-                            }
-                        }
-                        TabAnimation(
-                            index = -1,
-                            title = stringResource(R.string.library_tab_edit),
-                            selectedIndex = currentTabIndex,
-                            onClick = { showReorderTabsSheet = true }
-                        ) {
-                            Icon(
-                                Icons.Default.Edit,
-                                contentDescription = stringResource(R.string.library_cd_reorder_tabs),
-                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f)
-                            )
-                        }
-                    }
-                } else {
-                    CompactLibraryPagerIndicator(
-                        currentIndex = currentTabIndex,
-                        pageCount = tabTitles.size,
-                        modifier = Modifier.padding(top = 8.dp, bottom = 10.dp)
-                    )
-                }
+//                TopAppBar(
+//                    title = {
+//                        if (isCompactNavigation) {
+//                            LibraryNavigationPill(
+//                                modifier = Modifier,
+//                                title = currentTabTitle,
+//                                isExpanded = showTabSwitcherSheet,
+//                                showIcon = !isSendingToWatch,
+//                                iconRes = currentTab.iconRes(),
+//                                pageIndex = pagerState.currentPage,
+//                                compressForWatchTransfer = isSendingToWatch,
+//                                onClick = {
+//                                    showTabSwitcherSheet = true
+//                                },
+//                                onArrowClick = { showTabSwitcherSheet = true }
+//                            )
+//                        } else {
+//                            Text(
+//                                modifier = Modifier.padding(start = 8.dp),
+//                                text = stringResource(R.string.library_screen_title),
+//                                fontFamily = GoogleSansRounded,
+//                                fontWeight = FontWeight.ExtraBold,
+//                                color = MaterialTheme.colorScheme.primary,
+//                                fontSize = 40.sp,
+//                                letterSpacing = 1.sp
+//                            )
+//                        }
+//                    },
+//                    actions = {
+//                        if (isSendingToWatch) {
+//                            val watchTransferProgress = activeWatchTransfer?.progress ?: 0f
+//                            val watchTransferPercent = (watchTransferProgress * 100f).toInt().coerceIn(0, 100)
+//                            Surface(
+//                                modifier = Modifier
+//                                    .padding(end = 8.dp)
+//                                    .wrapContentWidth()
+//                                    .height(40.dp)
+//                                    .clip(CircleShape)
+//                                    .clickable(enabled = activeWatchTransfer != null) {
+//                                        showWatchTransferDialog = true
+//                                    },
+//                                shape = CircleShape,
+//                                color = MaterialTheme.colorScheme.secondaryContainer,
+//                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+//                            ) {
+//                                Row(
+//                                    modifier = Modifier
+//                                        .padding(horizontal = 8.dp),
+//                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+//                                    verticalAlignment = Alignment.CenterVertically
+//                                ) {
+//                                    Icon(
+//                                        painter = painterResource(R.drawable.rounded_watch_arrow_down_24),
+//                                        contentDescription = stringResource(R.string.library_cd_watch_transfer),
+//                                        modifier = Modifier.size(20.dp)
+//                                    )
+//                                    Text(
+//                                        text = stringResource(R.string.common_percentage_text, watchTransferPercent),
+//                                        style = MaterialTheme.typography.labelMedium,
+//                                        fontWeight = FontWeight.Bold
+//                                    )
+//                                }
+//                            }
+//                        }
+//                        FilledIconButton(
+//                            modifier = Modifier.padding(end = 14.dp),
+//                            colors = IconButtonDefaults.filledIconButtonColors(
+//                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+//                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+//                            ),
+//                            onClick = {
+//                                navController.navigateSafely(Screen.Settings.route)
+//                            }
+//                        ) {
+//                            Icon(
+//                                painter = painterResource(R.drawable.rounded_settings_24),
+//                                contentDescription = stringResource(R.string.library_cd_open_settings)
+//                            )
+//                        }
+//                    },
+//                    colors = TopAppBarDefaults.topAppBarColors(
+//                        containerColor = Color.Transparent,
+//                        scrolledContainerColor = Color.Transparent
+//                    )
+//                )
+
+
+
+
             }
         }
     ) { innerScaffoldPadding ->
@@ -1014,12 +959,91 @@ fun LibraryScreen(
 
         Box(
             modifier = Modifier
-                .padding(top = innerScaffoldPadding.calculateTopPadding())
                 .fillMaxSize()
+                .padding(top = innerScaffoldPadding.calculateTopPadding() + 12.dp)
+//               .background(color = headerContainerColor)
+
         ) {
+
+            PrimaryScrollableTabRow(
+                selectedTabIndex = currentTabIndex,
+                containerColor = Color.Transparent,
+                edgePadding = 0.dp,
+                indicator = {
+
+//                                TabRowDefaults.PrimaryIndicator(
+//                                    modifier = Modifier.tabIndicatorOffset(selectedTabIndex = currentTabIndex),
+//                                    height = 3.dp,
+//                                    color = MaterialTheme.colorScheme.primary
+//                                )
+
+                },
+                divider = {}
+            ) {
+                tabTitles.forEachIndexed { index, rawId ->
+                    val tabId = rawId.toLibraryTabIdOrNull() ?: LibraryTabId.SONGS
+                    Box(modifier = Modifier.padding(top = 24.dp, end = 12.dp).clickable(interactionSource = null,indication = null, onClick = {
+                        scope.launch {
+                            pagerState.animateScrollToPage(
+                                targetPageForTabIndex(
+                                    currentPage = pagerState.currentPage,
+                                    targetTabIndex = index,
+                                    tabCount = tabTitles.size,
+                                    compactMode = isCompactNavigation
+                                )
+                            )
+                        }
+                    })) {
+                        Text(
+                            text = stringResource(tabId.titleRes).uppercase(),
+                            fontFamily = LazyGlamorFamily,
+                            fontSize = 42.sp,
+                            color = if(currentTabIndex == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
+                            //                                fontWeight = if (currentTabIndex == index) FontWeight.Bold else FontWeight.Medium
+                        )
+                    }
+//                            TabAnimation(
+//                                index = index,
+//                                title = tabId.storageKey,
+//                                selectedIndex = currentTabIndex,
+//                                onClick = {
+//                                    scope.launch {
+//                                        pagerState.animateScrollToPage(
+//                                            targetPageForTabIndex(
+//                                                currentPage = pagerState.currentPage,
+//                                                targetTabIndex = index,
+//                                                tabCount = tabTitles.size,
+//                                                compactMode = isCompactNavigation
+//                                            )
+//                                        )
+//                                    }
+//                                }
+//                            ) {
+//                                Text(
+//                                    text = stringResource(tabId.titleRes).uppercase(),
+//                                    style = MaterialTheme.typography.labelLarge,
+//                                    fontWeight = if (currentTabIndex == index) FontWeight.Bold else FontWeight.Medium
+//                                )
+//                            }
+                }
+                TabAnimation(
+                    index = -1,
+                    title = stringResource(R.string.library_tab_edit),
+                    selectedIndex = currentTabIndex,
+                    onClick = { showReorderTabsSheet = true }
+                ) {
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = stringResource(R.string.library_cd_reorder_tabs),
+                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f)
+                    )
+                }
+            }
+
             Column(
                 modifier = Modifier
-                    .background(color = headerContainerColor)
+                    .padding(top = 56.dp)
+//                    .background(color = headerContainerColor)
                     .fillMaxSize()
             ) {
                 Surface(
@@ -1353,7 +1377,9 @@ fun LibraryScreen(
                                 viewToggleContent = if (isAlbumTab) {
                                     {
                                         Row(
-                                            modifier = Modifier.fillMaxWidth().height(48.dp),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(48.dp),
                                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                                         ) {
                                             val isList = playerUiState.isAlbumsListView
@@ -1395,7 +1421,9 @@ fun LibraryScreen(
                                 sourceToggleContent = if (isFoldersTab && ENABLE_FOLDERS_SOURCE_TOGGLE) {
                                     {
                                         Row(
-                                            modifier = Modifier.fillMaxWidth().height(48.dp),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(48.dp),
                                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                                         ) {
                                             val isSdAvailable = playerUiState.isSdCardAvailable
@@ -2196,42 +2224,46 @@ fun LibraryScreen(
     }
 }
 
-@Composable
-private fun CompactLibraryPagerIndicator(
-    currentIndex: Int,
-    pageCount: Int,
-    modifier: Modifier = Modifier
-) {
-    if (pageCount <= 1) return
 
-    val safeIndex = positiveMod(currentIndex, pageCount)
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        repeat(pageCount) { index ->
-            val selected = index == safeIndex
-            val width by animateDpAsState(
-                targetValue = if (selected) 22.dp else 10.dp,
-                label = "LibraryCompactPagerIndicatorWidth"
-            )
-            val alpha by animateFloatAsState(
-                targetValue = if (selected) 1f else 0.35f,
-                label = "LibraryCompactPagerIndicatorAlpha"
-            )
 
-            Box(
-                modifier = Modifier
-                    .padding(horizontal = 3.dp)
-                    .height(4.dp)
-                    .width(width)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = alpha))
-            )
-        }
-    }
-}
+
+
+//@Composable
+//private fun CompactLibraryPagerIndicator(
+//    currentIndex: Int,
+//    pageCount: Int,
+//    modifier: Modifier = Modifier
+//) {
+//    if (pageCount <= 1) return
+//
+//    val safeIndex = positiveMod(currentIndex, pageCount)
+//    Row(
+//        modifier = modifier.fillMaxWidth(),
+//        horizontalArrangement = Arrangement.Center,
+//        verticalAlignment = Alignment.CenterVertically
+//    ) {
+//        repeat(pageCount) { index ->
+//            val selected = index == safeIndex
+//            val width by animateDpAsState(
+//                targetValue = if (selected) 22.dp else 10.dp,
+//                label = "LibraryCompactPagerIndicatorWidth"
+//            )
+//            val alpha by animateFloatAsState(
+//                targetValue = if (selected) 1f else 0.35f,
+//                label = "LibraryCompactPagerIndicatorAlpha"
+//            )
+//
+//            Box(
+//                modifier = Modifier
+//                    .padding(horizontal = 3.dp)
+//                    .height(4.dp)
+//                    .width(width)
+//                    .clip(CircleShape)
+//                    .background(MaterialTheme.colorScheme.primary.copy(alpha = alpha))
+//            )
+//        }
+//    }
+//}
 
 /**
  * Slim, non-intrusive indicator for sync work that should not keep the list pulled
@@ -3080,7 +3112,10 @@ fun LibraryFoldersTab(
                             val showScrollbar = LocalShowScrollbar.current && (listState.canScrollForward || listState.canScrollBackward)
                             LazyColumn(
                                 modifier = Modifier
-                                    .padding(start = 12.dp, end = if (showScrollbar) 22.dp else 12.dp)
+                                    .padding(
+                                        start = 12.dp,
+                                        end = if (showScrollbar) 22.dp else 12.dp
+                                    )
                                     .fillMaxSize()
                                     .clip(
                                         RoundedCornerShape(

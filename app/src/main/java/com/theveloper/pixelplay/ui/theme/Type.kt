@@ -32,6 +32,29 @@ val MontserratFamily = FontFamily(
     Font(googleFont = montserrat, fontProvider = provider, weight = FontWeight.Light),
 )
 
+val LazyGlamorFamily = FontFamily(
+    androidx.compose.ui.text.font.Font(R.font.lazyglamour)
+)
+
+val InterlopeFamily = FontFamily(
+    androidx.compose.ui.text.font.Font(R.font.interlope_main)
+)
+
+val AbordageFamily = FontFamily(
+    androidx.compose.ui.text.font.Font(R.font.abordage_regular)
+)
+
+val LinealFamily = FontFamily(
+    androidx.compose.ui.text.font.Font(R.font.lineal_bold, weight = FontWeight.Bold),
+            androidx.compose.ui.text.font.Font(R.font.lineal_black, weight = FontWeight.Black),
+    androidx.compose.ui.text.font.Font(R.font.lineal_heavy, weight = FontWeight.ExtraBold),
+    androidx.compose.ui.text.font.Font(R.font.lineal_bold, weight = FontWeight.Bold),
+    androidx.compose.ui.text.font.Font(R.font.lineal_regular, weight = FontWeight.Normal),
+    androidx.compose.ui.text.font.Font(R.font.lineal_medium, weight = FontWeight.Medium),
+    androidx.compose.ui.text.font.Font(R.font.lineal_thin, weight = FontWeight.Thin),
+    androidx.compose.ui.text.font.Font(R.font.lineal_light, weight = FontWeight.Light)
+)
+
 val ExpTitleTypography = Typography(
     displayLarge = TextStyle(
         fontFamily = MontserratFamily,

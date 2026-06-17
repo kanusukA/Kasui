@@ -35,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -56,6 +57,8 @@ import com.theveloper.pixelplay.presentation.components.ExpressiveScrollBar
 import com.theveloper.pixelplay.ui.theme.LocalShowScrollbar
 import com.theveloper.pixelplay.presentation.components.songFastScrollLabel
 import androidx.compose.ui.text.style.TextOverflow
+import com.theveloper.pixelplay.ui.theme.AbordageFamily
+import com.theveloper.pixelplay.ui.theme.LinealFamily
 
 
 @androidx.annotation.OptIn(UnstableApi::class)
@@ -230,11 +233,12 @@ fun LibrarySongsTab(
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(stringResource(R.string.library_error_loading_songs), style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.library_error_loading_songs), style = MaterialTheme.typography.titleMedium, fontFamily = AbordageFamily)
                     Text(
                         error.localizedMessage ?: stringResource(R.string.common_error_unknown),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontFamily = AbordageFamily
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Button(onClick = { songs.retry() }) {

@@ -77,6 +77,9 @@ import com.theveloper.pixelplay.data.model.MusicFolder
 import com.theveloper.pixelplay.ui.theme.GoogleSansRounded
 import java.io.File
 import androidx.compose.ui.res.stringResource
+import com.theveloper.pixelplay.ui.theme.AbordageFamily
+import com.theveloper.pixelplay.ui.theme.InterlopeFamily
+import com.theveloper.pixelplay.ui.theme.LinealFamily
 
 val defaultShape = RoundedCornerShape(26.dp) // Fallback shape
 val genHeight = 42.dp
@@ -120,11 +123,11 @@ fun LibraryActionRow(
             label = "ActionRowContent",
             transitionSpec = {
                 if (targetState) { // Transition to Folders (Breadcrumbs)
-                    slideInVertically { height -> height } + fadeIn() togetherWith
-                            slideOutVertically { height -> -height } + fadeOut()
+                    slideInHorizontally { height -> height } + fadeIn() togetherWith
+                            slideOutHorizontally { height -> -height } + fadeOut()
                 } else { // Transition to other tabs (Buttons)
-                    slideInVertically { height -> -height } + fadeIn() togetherWith
-                            slideOutVertically { height -> height } + fadeOut()
+                    slideInHorizontally { height -> -height } + fadeIn() togetherWith
+                            slideOutHorizontally { height -> height } + fadeOut()
                 }
             },
             modifier = Modifier.weight(1f)
@@ -195,6 +198,7 @@ fun LibraryActionRow(
                                 text = text,
                                 overflow = TextOverflow.Ellipsis,
                                 style = MaterialTheme.typography.labelLarge,
+                                fontFamily = AbordageFamily,
                                 fontWeight = FontWeight.Medium
                             )
                         }
@@ -257,6 +261,7 @@ fun LibraryActionRow(
                                         text = stringResource(R.string.common_import),
                                         overflow = TextOverflow.Ellipsis,
                                         style = MaterialTheme.typography.labelLarge,
+                                        fontFamily = AbordageFamily,
                                         fontWeight = FontWeight.Medium
                                     )
                                 }
@@ -504,7 +509,7 @@ fun Breadcrumbs(
                     text = name,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = if (isLast) FontWeight.Bold else FontWeight.Normal,
-                    fontFamily = GoogleSansRounded,
+                    fontFamily = AbordageFamily,
                     color = if (isLast) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
                         .clip(CircleShape)
