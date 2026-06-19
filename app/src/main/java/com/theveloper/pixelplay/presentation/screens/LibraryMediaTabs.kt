@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -92,7 +93,8 @@ fun LibraryAlbumsTab(
     onAlbumLongPress: (Album) -> Unit = {},
     onAlbumSelectionToggle: (Album) -> Unit = {},
     getSelectionIndex: (Long) -> Int? = { null },
-    storageFilter: StorageFilter = StorageFilter.ALL
+    storageFilter: StorageFilter = StorageFilter.ALL,
+            onScrollEvent: (LazyListState) -> Unit
 ) {
     val hasCurrentSong by remember(playerViewModel) {
         playerViewModel.stablePlayerState
@@ -133,6 +135,10 @@ fun LibraryAlbumsTab(
         } else {
             gridState.scrollToItem(0)
         }
+    }
+
+    LaunchedEffect(listState.isScrollInProgress) {
+        onScrollEvent(listState)
     }
 
     LaunchedEffect(albums.loadState.refresh, pendingAlbumSortScrollReset, isListView) {
@@ -481,7 +487,8 @@ fun LibraryArtistsTab(
     onArtistClick: (Long) -> Unit,
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
-    storageFilter: StorageFilter = StorageFilter.ALL
+    storageFilter: StorageFilter = StorageFilter.ALL,
+    onScrollEvent: (LazyListState) -> Unit
 ) {
     val hasCurrentSong by remember(playerViewModel) {
         playerViewModel.stablePlayerState
@@ -677,7 +684,8 @@ fun LibraryPlaylistsTab(
     selectedPlaylistIds: Set<String> = emptySet(),
     onPlaylistLongPress: (com.theveloper.pixelplay.data.model.Playlist) -> Unit = {},
     onPlaylistSelectionToggle: (com.theveloper.pixelplay.data.model.Playlist) -> Unit = {},
-    onPlaylistOptionsClick: () -> Unit = {}
+    onPlaylistOptionsClick: () -> Unit = {},
+            onScrollEvent: (LazyListState) -> Unit
 ) {
     PlaylistContainer(
         playlistUiState = playlistUiState,
@@ -691,6 +699,7 @@ fun LibraryPlaylistsTab(
         isSelectionMode = isSelectionMode,
         selectedPlaylistIds = selectedPlaylistIds,
         onPlaylistLongPress = onPlaylistLongPress,
-        onPlaylistSelectionToggle = onPlaylistSelectionToggle
+        onPlaylistSelectionToggle = onPlaylistSelectionToggle,
+        onScrollEvent = onScrollEvent
     )
 }

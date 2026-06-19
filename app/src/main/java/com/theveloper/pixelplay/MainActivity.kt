@@ -87,6 +87,8 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsetsSides
 import com.theveloper.pixelplay.presentation.viewmodel.PlayerSheetState
 
 import androidx.compose.ui.unit.Dp
@@ -203,10 +205,10 @@ class MainActivity : ComponentActivity() {
         LogUtils.d(this, "onCreate")
         val splashScreen = installSplashScreen()
         enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.auto(
-                android.graphics.Color.TRANSPARENT,
-                android.graphics.Color.TRANSPARENT
-            ),
+//            statusBarStyle = SystemBarStyle.auto(
+//                android.graphics.Color.TRANSPARENT,
+//                android.graphics.Color.TRANSPARENT
+//            ),
             navigationBarStyle = SystemBarStyle.auto(
                 android.graphics.Color.TRANSPARENT,
                 android.graphics.Color.TRANSPARENT
@@ -797,6 +799,7 @@ class MainActivity : ComponentActivity() {
 
                 Scaffold(
                 modifier = Modifier.fillMaxSize(),
+                    contentWindowInsets = WindowInsets(0,0,0,0),
                 bottomBar = {
                     if (shouldRenderNavigationBar) {
                         val currentSongId by remember {
@@ -967,7 +970,7 @@ class MainActivity : ComponentActivity() {
                             AppNavigation(
                                 playerViewModel = playerViewModel,
                                 navController = navController,
-                                paddingValues = innerPadding,
+                                paddingValues = PaddingValues(0.dp),
                                 userPreferencesRepository = userPreferencesRepository,
                                 onSearchBarActiveChange = { isSearchBarActive = it },
                                 onOpenSidebar = { scope.launch { drawerState.open() } }

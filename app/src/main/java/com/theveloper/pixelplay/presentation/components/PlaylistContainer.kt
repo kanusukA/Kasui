@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -108,7 +109,9 @@ fun PlaylistContainer(
     selectedPlaylistIds: Set<String> = emptySet(),
     onPlaylistLongPress: (Playlist) -> Unit = {},
     onPlaylistSelectionToggle: (Playlist) -> Unit = {},
-    playlistSelectionStateHolder: PlaylistSelectionStateHolder? = null
+    playlistSelectionStateHolder: PlaylistSelectionStateHolder? = null,
+            onScrollEvent: (LazyListState) -> Unit
+
 ) {
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -183,7 +186,8 @@ fun PlaylistContainer(
                     isAddingToPlaylist = true,
                     filteredPlaylists = filteredPlaylists,
                     selectedPlaylists = selectedPlaylists,
-                    currentSortOption = currentSortOption
+                    currentSortOption = currentSortOption,
+                    onScrollEvent = onScrollEvent
                 )
             } else {
                 val playlistPullToRefreshState = rememberPullToRefreshState()
@@ -209,7 +213,10 @@ fun PlaylistContainer(
                         isSelectionMode = isSelectionMode,
                         selectedPlaylistIds = selectedPlaylistIds,
                         onPlaylistLongPress = onPlaylistLongPress,
-                        onPlaylistSelectionToggle = onPlaylistSelectionToggle
+                        onPlaylistSelectionToggle = onPlaylistSelectionToggle,
+                                onScrollEvent = onScrollEvent
+
+
                     )
                 }
             }
@@ -245,7 +252,8 @@ fun PlaylistItems(
     isSelectionMode: Boolean = false,
     selectedPlaylistIds: Set<String> = emptySet(),
     onPlaylistLongPress: (Playlist) -> Unit = {},
-    onPlaylistSelectionToggle: (Playlist) -> Unit = {}
+    onPlaylistSelectionToggle: (Playlist) -> Unit = {},
+    onScrollEvent: (LazyListState) -> Unit
 ) {
     val hasCurrentSong by remember(playerViewModel) {
         playerViewModel.stablePlayerState
@@ -270,6 +278,10 @@ fun PlaylistItems(
         lastHandledPlaylistSortKey = currentSortKey
         pendingPlaylistSortScrollReset = true
         listState.scrollToItem(0)
+    }
+
+    LaunchedEffect(listState.isScrollInProgress) {
+        onScrollEvent(listState)
     }
 
     LaunchedEffect(filteredPlaylists, pendingPlaylistSortScrollReset) {

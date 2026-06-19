@@ -196,7 +196,8 @@ fun PlaylistBottomSheet(
                     isAddingToPlaylist = true,
                     currentSong = songs.firstOrNull() ?: Song.emptySong(), // Fallback safe
                     filteredPlaylists = filteredPlaylists,
-                    selectedPlaylists = selectedPlaylists
+                    selectedPlaylists = selectedPlaylists,
+                    onScrollEvent = {}
                 )
 
                 if (showCreatePlaylistDialog) {

@@ -234,8 +234,15 @@ import com.theveloper.pixelplay.ui.theme.GoogleSansRounded
 import java.util.Locale
 import androidx.compose.ui.platform.LocalContext
 import android.widget.Toast
+import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.ui.focus.focusModifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.unit.coerceIn
 import com.theveloper.pixelplay.data.model.PlaylistShapeType
 import kotlinx.coroutines.flow.first
 import androidx.paging.compose.collectAsLazyPagingItems
@@ -248,6 +255,7 @@ import com.theveloper.pixelplay.presentation.components.subcomps.EnhancedSongLis
 import com.theveloper.pixelplay.data.service.wear.PhoneWatchTransferState
 import com.theveloper.pixelplay.shared.WearTransferProgress
 import com.theveloper.pixelplay.ui.theme.LazyGlamorFamily
+import kotlinx.coroutines.delay
 import java.io.File
 import kotlin.math.abs
 
@@ -842,102 +850,84 @@ fun LibraryScreen(
     val headerContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
 
 
+    // NESTED SCROLL
+    val density = LocalDensity.current
+
+    val minHeightPx = 0f
+    val defaultHeightPx = with(density) { 60.dp.toPx() }
+    val maxHeightPx = with(density) { 220.dp.toPx() }
+    var listAtTop by remember { mutableStateOf(false) }
+
+
+    var topBarHeightPx by remember { mutableStateOf(defaultHeightPx) }
+    val animatedTopBarHeight = animateFloatAsState(topBarHeightPx)
+
+
+    val maxFontSize = 58
+    val defaultFontSize = 42
+    var tabFontSize by remember { mutableStateOf(defaultFontSize) }
+    val animatedTopFontSize = animateIntAsState(tabFontSize)
+    var tabBarVisible by remember { mutableStateOf(true) }
+
+    var selectionBarPadding by remember { mutableStateOf(0.dp) }
+    val animatedSelectionBarPadding = animateDpAsState(selectionBarPadding)
+
+    // Coordinate scroll deltas between the list and the header
+    val nestedScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                val delta = available.y
+                if (listAtTop){
+                    topBarHeightPx = (topBarHeightPx + delta).coerceIn(minHeightPx, maxHeightPx)
+                    if (topBarHeightPx >= defaultHeightPx){
+                        tabFontSize = (tabFontSize + delta.toInt()).coerceIn(defaultFontSize,maxFontSize);
+                    }
+                }else{
+                    topBarHeightPx = (topBarHeightPx + delta).coerceIn(minHeightPx, defaultHeightPx)
+                }
+
+                return Offset.Zero
+            }
+
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource
+            ): Offset {
+
+                if (topBarHeightPx < defaultHeightPx/2){
+                    topBarHeightPx = minHeightPx
+                    tabFontSize = defaultFontSize
+                    tabBarVisible = false
+                    selectionBarPadding = 32.dp
+                }else if (topBarHeightPx > maxHeightPx/2){
+                    topBarHeightPx = maxHeightPx
+                    tabFontSize = maxFontSize
+                    tabBarVisible = true
+                    selectionBarPadding = 0.dp
+                }else{
+                    topBarHeightPx = defaultHeightPx
+                    tabFontSize = defaultFontSize
+                    tabBarVisible = true
+                    selectionBarPadding = 0.dp
+                }
+
+                return Offset.Zero
+
+            }
+        }
+    }
+
+
     Scaffold(
         modifier = Modifier.background(color = headerContainerColor),
         containerColor = headerContainerColor,
         contentColor = headerContainerColor,
+        contentWindowInsets = WindowInsets(0,0,0,0),
         topBar = {
             Column(
                 modifier = Modifier.background(headerContainerColor)
             ) {
-//                TopAppBar(
-//                    title = {
-//                        if (isCompactNavigation) {
-//                            LibraryNavigationPill(
-//                                modifier = Modifier,
-//                                title = currentTabTitle,
-//                                isExpanded = showTabSwitcherSheet,
-//                                showIcon = !isSendingToWatch,
-//                                iconRes = currentTab.iconRes(),
-//                                pageIndex = pagerState.currentPage,
-//                                compressForWatchTransfer = isSendingToWatch,
-//                                onClick = {
-//                                    showTabSwitcherSheet = true
-//                                },
-//                                onArrowClick = { showTabSwitcherSheet = true }
-//                            )
-//                        } else {
-//                            Text(
-//                                modifier = Modifier.padding(start = 8.dp),
-//                                text = stringResource(R.string.library_screen_title),
-//                                fontFamily = GoogleSansRounded,
-//                                fontWeight = FontWeight.ExtraBold,
-//                                color = MaterialTheme.colorScheme.primary,
-//                                fontSize = 40.sp,
-//                                letterSpacing = 1.sp
-//                            )
-//                        }
-//                    },
-//                    actions = {
-//                        if (isSendingToWatch) {
-//                            val watchTransferProgress = activeWatchTransfer?.progress ?: 0f
-//                            val watchTransferPercent = (watchTransferProgress * 100f).toInt().coerceIn(0, 100)
-//                            Surface(
-//                                modifier = Modifier
-//                                    .padding(end = 8.dp)
-//                                    .wrapContentWidth()
-//                                    .height(40.dp)
-//                                    .clip(CircleShape)
-//                                    .clickable(enabled = activeWatchTransfer != null) {
-//                                        showWatchTransferDialog = true
-//                                    },
-//                                shape = CircleShape,
-//                                color = MaterialTheme.colorScheme.secondaryContainer,
-//                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-//                            ) {
-//                                Row(
-//                                    modifier = Modifier
-//                                        .padding(horizontal = 8.dp),
-//                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-//                                    verticalAlignment = Alignment.CenterVertically
-//                                ) {
-//                                    Icon(
-//                                        painter = painterResource(R.drawable.rounded_watch_arrow_down_24),
-//                                        contentDescription = stringResource(R.string.library_cd_watch_transfer),
-//                                        modifier = Modifier.size(20.dp)
-//                                    )
-//                                    Text(
-//                                        text = stringResource(R.string.common_percentage_text, watchTransferPercent),
-//                                        style = MaterialTheme.typography.labelMedium,
-//                                        fontWeight = FontWeight.Bold
-//                                    )
-//                                }
-//                            }
-//                        }
-//                        FilledIconButton(
-//                            modifier = Modifier.padding(end = 14.dp),
-//                            colors = IconButtonDefaults.filledIconButtonColors(
-//                                containerColor = MaterialTheme.colorScheme.primaryContainer,
-//                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-//                            ),
-//                            onClick = {
-//                                navController.navigateSafely(Screen.Settings.route)
-//                            }
-//                        ) {
-//                            Icon(
-//                                painter = painterResource(R.drawable.rounded_settings_24),
-//                                contentDescription = stringResource(R.string.library_cd_open_settings)
-//                            )
-//                        }
-//                    },
-//                    colors = TopAppBarDefaults.topAppBarColors(
-//                        containerColor = Color.Transparent,
-//                        scrolledContainerColor = Color.Transparent
-//                    )
-//                )
-
-
-
 
             }
         }
@@ -960,96 +950,22 @@ fun LibraryScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = innerScaffoldPadding.calculateTopPadding() + 12.dp)
-//               .background(color = headerContainerColor)
+                .padding()
+                .nestedScroll(nestedScrollConnection)
 
         ) {
 
-            PrimaryScrollableTabRow(
-                selectedTabIndex = currentTabIndex,
-                containerColor = Color.Transparent,
-                edgePadding = 0.dp,
-                indicator = {
-
-//                                TabRowDefaults.PrimaryIndicator(
-//                                    modifier = Modifier.tabIndicatorOffset(selectedTabIndex = currentTabIndex),
-//                                    height = 3.dp,
-//                                    color = MaterialTheme.colorScheme.primary
-//                                )
-
-                },
-                divider = {}
-            ) {
-                tabTitles.forEachIndexed { index, rawId ->
-                    val tabId = rawId.toLibraryTabIdOrNull() ?: LibraryTabId.SONGS
-                    Box(modifier = Modifier.padding(top = 24.dp, end = 12.dp).clickable(interactionSource = null,indication = null, onClick = {
-                        scope.launch {
-                            pagerState.animateScrollToPage(
-                                targetPageForTabIndex(
-                                    currentPage = pagerState.currentPage,
-                                    targetTabIndex = index,
-                                    tabCount = tabTitles.size,
-                                    compactMode = isCompactNavigation
-                                )
-                            )
-                        }
-                    })) {
-                        Text(
-                            text = stringResource(tabId.titleRes).uppercase(),
-                            fontFamily = LazyGlamorFamily,
-                            fontSize = 42.sp,
-                            color = if(currentTabIndex == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
-                            //                                fontWeight = if (currentTabIndex == index) FontWeight.Bold else FontWeight.Medium
-                        )
-                    }
-//                            TabAnimation(
-//                                index = index,
-//                                title = tabId.storageKey,
-//                                selectedIndex = currentTabIndex,
-//                                onClick = {
-//                                    scope.launch {
-//                                        pagerState.animateScrollToPage(
-//                                            targetPageForTabIndex(
-//                                                currentPage = pagerState.currentPage,
-//                                                targetTabIndex = index,
-//                                                tabCount = tabTitles.size,
-//                                                compactMode = isCompactNavigation
-//                                            )
-//                                        )
-//                                    }
-//                                }
-//                            ) {
-//                                Text(
-//                                    text = stringResource(tabId.titleRes).uppercase(),
-//                                    style = MaterialTheme.typography.labelLarge,
-//                                    fontWeight = if (currentTabIndex == index) FontWeight.Bold else FontWeight.Medium
-//                                )
-//                            }
-                }
-                TabAnimation(
-                    index = -1,
-                    title = stringResource(R.string.library_tab_edit),
-                    selectedIndex = currentTabIndex,
-                    onClick = { showReorderTabsSheet = true }
-                ) {
-                    Icon(
-                        Icons.Default.Edit,
-                        contentDescription = stringResource(R.string.library_cd_reorder_tabs),
-                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f)
-                    )
-                }
-            }
-
             Column(
                 modifier = Modifier
-                    .padding(top = 56.dp)
+                    .padding(top = with(density) { animatedTopBarHeight.value.toDp() })
 //                    .background(color = headerContainerColor)
                     .fillMaxSize()
+
             ) {
                 Surface(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 0.dp, vertical = 0.dp), // Removed horizontal padding for more space
+                        .fillMaxSize(),
+                         // Removed horizontal padding for more space
                     color = MaterialTheme.colorScheme.surface,
                     shape = AbsoluteSmoothCornerShape(
                         cornerRadiusTL = 34.dp,
@@ -1063,7 +979,7 @@ fun LibraryScreen(
                     )
                     // shape = AbsoluteSmoothCornerShape(cornerRadiusTL = 24.dp, smoothnessAsPercentTR = 60, /*...*/) // Your custom shape
                 ) {
-                    Column(Modifier.fillMaxSize()) {
+                    Box(Modifier.fillMaxSize()) {
                         // OPTIMIZACIÓN: La lógica de ordenamiento ahora es más eficiente.
                         val availableSortOptions by playerViewModel.availableSortOptions.collectAsStateWithLifecycle()
                         val sanitizedSortOptions = remember(availableSortOptions, currentTabId) {
@@ -1192,129 +1108,7 @@ fun LibraryScreen(
                             }
                         }
 
-                        // Switch between normal action row and selection action row
-                        AnimatedContent(
-                            targetState = isSelectionMode || isPlaylistSelectionMode || isAlbumSelectionMode,
-                            label = "ActionRowModeSwitch",
-                            transitionSpec = {
-                                (slideInHorizontally { -it } + fadeIn()) togetherWith
-                                        (slideOutHorizontally { it } + fadeOut())
-                            },
-                            modifier = Modifier
-                                .padding(
-                                    top = 6.dp,
-                                    start = 10.dp,
-                                    end = 10.dp
-                                )
-                                .heightIn(min = 56.dp)
-                        ) { inSelectionMode ->
-                            if (inSelectionMode) {
-                                // Playlist selection row
-                                if (currentTabId == LibraryTabId.PLAYLISTS && isPlaylistSelectionMode) {
-                                    SelectionActionRow(
-                                        selectedCount = selectedPlaylists.size,
-                                        onSelectAll = {
-                                            playerViewModel.playlistSelectionStateHolder.selectAll(visiblePlaylists)
-                                        },
-                                        onDeselect = { playerViewModel.playlistSelectionStateHolder.clearSelection() },
-                                        onOptionsClick = { showPlaylistMultiSelectionSheet = true }
-                                    )
-                                } else if (currentTabId == LibraryTabId.ALBUMS && isAlbumSelectionMode) {
-                                    SelectionActionRow(
-                                        selectedCount = selectedAlbums.size,
-                                        onSelectAll = {
-                                            val remaining = MAX_ALBUM_MULTI_SELECTION - selectedAlbums.size
-                                            if (remaining <= 0) {
-                                                playerViewModel.sendToast(
-                                                    context.getString(
-                                                        R.string.library_toast_max_albums_selection,
-                                                        MAX_ALBUM_MULTI_SELECTION
-                                                    )
-                                                )
-                                            } else {
-                                                val albumsToAppend = playerViewModel.albumsFlow.value
-                                                    .filterNot { selectedAlbumIds.contains(it.id) }
-                                                    .take(remaining)
-                                                if (albumsToAppend.isNotEmpty()) {
-                                                    selectedAlbums = selectedAlbums + albumsToAppend
-                                                }
-                                            }
-                                        },
-                                        onDeselect = { selectedAlbums = emptyList() },
-                                        onOptionsClick = { showAlbumMultiSelectionSheet = true }
-                                    )
-                                } else {
-                                    // Song selection row
-                                    SelectionActionRow(
-                                        selectedCount = selectedSongs.size,
-                                        onSelectAll = {
-                                            when (tabTitles.getOrNull(currentTabIndex)?.toLibraryTabIdOrNull()) {
-                                                LibraryTabId.LIKED -> {
-                                                    scope.launch {
-                                                        val songsToSelect =
-                                                            playerViewModel.getSongsForCurrentFavoriteSelection()
-                                                        multiSelectionState.selectAll(songsToSelect)
-                                                    }
-                                                }
-                                                LibraryTabId.FOLDERS -> {
-                                                    val songsToSelect =
-                                                        playerViewModel.playerUiState.value.currentFolder?.songs ?: emptyList()
-                                                    multiSelectionState.selectAll(songsToSelect)
-                                                }
-                                                LibraryTabId.SONGS -> {
-                                                    scope.launch {
-                                                        val songsToSelect =
-                                                            playerViewModel.getSongsForCurrentLibrarySelection()
-                                                        multiSelectionState.selectAll(songsToSelect)
-                                                    }
-                                                }
-                                                else -> Unit
-                                            }
-                                        },
-                                        onDeselect = { multiSelectionState.clearSelection() },
-                                        onOptionsClick = { showMultiSelectionSheet = true }
-                                    )
-                                }
-                            } else {
-                                LibraryActionRow(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(end = 4.dp),
-                                    onMainActionClick = {
-                                        when (tabTitles.getOrNull(currentTabIndex)?.toLibraryTabIdOrNull()) {
-                                            LibraryTabId.PLAYLISTS -> showPlaylistCreationTypeDialog = true
-                                            LibraryTabId.LIKED -> playerViewModel.shuffleFavoriteSongs()
-                                            LibraryTabId.ALBUMS -> playerViewModel.shuffleRandomAlbum()
-                                            LibraryTabId.ARTISTS -> playerViewModel.shuffleRandomArtist()
-                                            else -> playerViewModel.shuffleAllSongs()
-                                        }
-                                    },
-                                    iconRotation = iconRotation,
-                                    showSortButton = sanitizedSortOptions.isNotEmpty(),
-                                    showLocateButton = showLocateButton,
-                                    onSortClick = { playerViewModel.showSortingSheet() },
-                                    onLocateClick = { locateAction?.invoke() },
-                                    isPlaylistTab = currentTabId == LibraryTabId.PLAYLISTS,
-                                    isFoldersTab = currentTabId == LibraryTabId.FOLDERS && (!playerUiState.isFoldersPlaylistView || playerUiState.currentFolder != null),
-                                    onImportM3uClick = { m3uImportLauncher.launch("audio/x-mpegurl") },
-                                    currentFolder = playerUiState.currentFolder,
-                                    folderRootPath = playerUiState.folderSourceRootPath.ifBlank {
-                                        Environment.getExternalStorageDirectory().path
-                                    },
-                                    folderRootLabel = playerUiState.folderSource.displayName,
-                                    onFolderClick = { playerViewModel.navigateToFolder(it) },
-                                    onNavigateBack = { playerViewModel.navigateBackFolder() },
-                                    isShuffleEnabled = isShuffleEnabled,
-                                    showStorageFilterButton = currentTabId == LibraryTabId.SONGS ||
-                                            currentTabId == LibraryTabId.ALBUMS ||
-                                            currentTabId == LibraryTabId.ARTISTS ||
-                                            currentTabId == LibraryTabId.LIKED ||
-                                            (ENABLE_FOLDERS_STORAGE_FILTER && currentTabId == LibraryTabId.FOLDERS),
-                                    currentStorageFilter = playerUiState.currentStorageFilter,
-                                    onStorageFilterClick = { playerViewModel.toggleStorageFilter() }
-                                )
-                            }
-                        }
+
 
                         // Slim inline sync indicator. Automatic startup syncs use this
                         // instead of pulling the list down, and manual refreshes hand off
@@ -1563,7 +1357,10 @@ fun LibraryScreen(
                                             onRegisterLocateCurrentSongAction = { songsLocateAction = it },
                                             sortOption = playerUiState.currentSongSortOption,
                                             storageFilter = playerUiState.currentStorageFilter,
-                                            hasCurrentSong = hasCurrentSong
+                                            hasCurrentSong = hasCurrentSong,
+                                            onScrollEvent = {
+                                                listAtTop = it.firstVisibleItemIndex == 0
+                                            }
                                         )
                                     }
                                     LibraryTabId.ALBUMS -> {
@@ -1593,7 +1390,10 @@ fun LibraryScreen(
                                             onAlbumLongPress = onAlbumLongPress,
                                             onAlbumSelectionToggle = onAlbumSelectionToggle,
                                             getSelectionIndex = getAlbumSelectionIndex,
-                                            storageFilter = playerUiState.currentStorageFilter
+                                            storageFilter = playerUiState.currentStorageFilter,
+                                            onScrollEvent = {
+                                                listAtTop = it.firstVisibleItemIndex == 0
+                                            }
                                         )
                                     }
 
@@ -1615,7 +1415,10 @@ fun LibraryScreen(
                                             },
                                             isRefreshing = isRefreshing,
                                             onRefresh = onRefresh,
-                                            storageFilter = playerUiState.currentStorageFilter
+                                            storageFilter = playerUiState.currentStorageFilter,
+                                            onScrollEvent = {
+                                                listAtTop = it.firstVisibleItemIndex == 0
+                                            }
                                         )
                                     }
 
@@ -1633,7 +1436,10 @@ fun LibraryScreen(
                                             selectedPlaylistIds = selectedPlaylistIds,
                                             onPlaylistLongPress = onPlaylistLongPress,
                                             onPlaylistSelectionToggle = onPlaylistSelectionToggle,
-                                            onPlaylistOptionsClick = { showPlaylistMultiSelectionSheet = true }
+                                            onPlaylistOptionsClick = { showPlaylistMultiSelectionSheet = true },
+                                            onScrollEvent = {
+                                                listAtTop = it.firstVisibleItemIndex == 0
+                                            }
                                         )
                                     }
 
@@ -1658,7 +1464,10 @@ fun LibraryScreen(
                                             onLocateCurrentSongVisibilityChanged = { likedShowLocateButton = it },
                                             onRegisterLocateCurrentSongAction = { likedLocateAction = it },
                                             storageFilter = playerUiState.currentStorageFilter,
-                                            hasCurrentSong = hasCurrentSong
+                                            hasCurrentSong = hasCurrentSong,
+                                            onScrollEvent = {
+                                                listAtTop = it.firstVisibleItemIndex == 0
+                                            }
                                         )
                                     }
 
@@ -1709,6 +1518,9 @@ fun LibraryScreen(
                                             onRequestCrossFolderLocate = { folderPath ->
                                                 pendingFoldersLocatePath = folderPath
                                                 playerViewModel.navigateToFolder(folderPath)
+                                            },
+                                            onScrollEvent = {
+                                                listAtTop = it.firstVisibleItemIndex == 0
                                             }
                                         )
                                     }
@@ -1729,6 +1541,129 @@ fun LibraryScreen(
                                     .align(Alignment.TopCenter)
                                     .zIndex(1f)
                             )
+                        }
+                        // Switch between normal action row and selection action row
+                        AnimatedContent(
+                            targetState = isSelectionMode || isPlaylistSelectionMode || isAlbumSelectionMode,
+                            label = "ActionRowModeSwitch",
+                            transitionSpec = {
+                                (slideInHorizontally { -it } + fadeIn()) togetherWith
+                                        (slideOutHorizontally { it } + fadeOut())
+                            },
+                            modifier = Modifier
+                                .padding(
+                                    top = 6.dp + animatedSelectionBarPadding.value,
+                                    start = 10.dp,
+                                    end = 10.dp
+                                )
+                                .heightIn(min = 56.dp)
+                        ) { inSelectionMode ->
+                            if (inSelectionMode) {
+                                // Playlist selection row
+                                if (currentTabId == LibraryTabId.PLAYLISTS && isPlaylistSelectionMode) {
+                                    SelectionActionRow(
+                                        selectedCount = selectedPlaylists.size,
+                                        onSelectAll = {
+                                            playerViewModel.playlistSelectionStateHolder.selectAll(visiblePlaylists)
+                                        },
+                                        onDeselect = { playerViewModel.playlistSelectionStateHolder.clearSelection() },
+                                        onOptionsClick = { showPlaylistMultiSelectionSheet = true }
+                                    )
+                                } else if (currentTabId == LibraryTabId.ALBUMS && isAlbumSelectionMode) {
+                                    SelectionActionRow(
+                                        selectedCount = selectedAlbums.size,
+                                        onSelectAll = {
+                                            val remaining = MAX_ALBUM_MULTI_SELECTION - selectedAlbums.size
+                                            if (remaining <= 0) {
+                                                playerViewModel.sendToast(
+                                                    context.getString(
+                                                        R.string.library_toast_max_albums_selection,
+                                                        MAX_ALBUM_MULTI_SELECTION
+                                                    )
+                                                )
+                                            } else {
+                                                val albumsToAppend = playerViewModel.albumsFlow.value
+                                                    .filterNot { selectedAlbumIds.contains(it.id) }
+                                                    .take(remaining)
+                                                if (albumsToAppend.isNotEmpty()) {
+                                                    selectedAlbums = selectedAlbums + albumsToAppend
+                                                }
+                                            }
+                                        },
+                                        onDeselect = { selectedAlbums = emptyList() },
+                                        onOptionsClick = { showAlbumMultiSelectionSheet = true }
+                                    )
+                                } else {
+                                    // Song selection row
+                                    SelectionActionRow(
+                                        selectedCount = selectedSongs.size,
+                                        onSelectAll = {
+                                            when (tabTitles.getOrNull(currentTabIndex)?.toLibraryTabIdOrNull()) {
+                                                LibraryTabId.LIKED -> {
+                                                    scope.launch {
+                                                        val songsToSelect =
+                                                            playerViewModel.getSongsForCurrentFavoriteSelection()
+                                                        multiSelectionState.selectAll(songsToSelect)
+                                                    }
+                                                }
+                                                LibraryTabId.FOLDERS -> {
+                                                    val songsToSelect =
+                                                        playerViewModel.playerUiState.value.currentFolder?.songs ?: emptyList()
+                                                    multiSelectionState.selectAll(songsToSelect)
+                                                }
+                                                LibraryTabId.SONGS -> {
+                                                    scope.launch {
+                                                        val songsToSelect =
+                                                            playerViewModel.getSongsForCurrentLibrarySelection()
+                                                        multiSelectionState.selectAll(songsToSelect)
+                                                    }
+                                                }
+                                                else -> Unit
+                                            }
+                                        },
+                                        onDeselect = { multiSelectionState.clearSelection() },
+                                        onOptionsClick = { showMultiSelectionSheet = true }
+                                    )
+                                }
+                            } else {
+                                LibraryActionRow(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(end = 4.dp),
+                                    onMainActionClick = {
+                                        when (tabTitles.getOrNull(currentTabIndex)?.toLibraryTabIdOrNull()) {
+                                            LibraryTabId.PLAYLISTS -> showPlaylistCreationTypeDialog = true
+                                            LibraryTabId.LIKED -> playerViewModel.shuffleFavoriteSongs()
+                                            LibraryTabId.ALBUMS -> playerViewModel.shuffleRandomAlbum()
+                                            LibraryTabId.ARTISTS -> playerViewModel.shuffleRandomArtist()
+                                            else -> playerViewModel.shuffleAllSongs()
+                                        }
+                                    },
+                                    iconRotation = iconRotation,
+                                    showSortButton = sanitizedSortOptions.isNotEmpty(),
+                                    showLocateButton = showLocateButton,
+                                    onSortClick = { playerViewModel.showSortingSheet() },
+                                    onLocateClick = { locateAction?.invoke() },
+                                    isPlaylistTab = currentTabId == LibraryTabId.PLAYLISTS,
+                                    isFoldersTab = currentTabId == LibraryTabId.FOLDERS && (!playerUiState.isFoldersPlaylistView || playerUiState.currentFolder != null),
+                                    onImportM3uClick = { m3uImportLauncher.launch("audio/x-mpegurl") },
+                                    currentFolder = playerUiState.currentFolder,
+                                    folderRootPath = playerUiState.folderSourceRootPath.ifBlank {
+                                        Environment.getExternalStorageDirectory().path
+                                    },
+                                    folderRootLabel = playerUiState.folderSource.displayName,
+                                    onFolderClick = { playerViewModel.navigateToFolder(it) },
+                                    onNavigateBack = { playerViewModel.navigateBackFolder() },
+                                    isShuffleEnabled = isShuffleEnabled,
+                                    showStorageFilterButton = currentTabId == LibraryTabId.SONGS ||
+                                            currentTabId == LibraryTabId.ALBUMS ||
+                                            currentTabId == LibraryTabId.ARTISTS ||
+                                            currentTabId == LibraryTabId.LIKED ||
+                                            (ENABLE_FOLDERS_STORAGE_FILTER && currentTabId == LibraryTabId.FOLDERS),
+                                    currentStorageFilter = playerUiState.currentStorageFilter,
+                                    onStorageFilterClick = { playerViewModel.toggleStorageFilter() }
+                                )
+                            }
                         }
                     }
                 }
@@ -1762,6 +1697,68 @@ fun LibraryScreen(
                     // spinner + LibraryInlineSyncIndicator) handle sync feedback so the
                     // list stays visible.
                     LibrarySyncOverlay(syncManager = syncManager)
+                }
+            }
+
+            AnimatedVisibility(visible = tabBarVisible, enter = fadeIn(animationSpec = tween(durationMillis = 500,)) , exit = fadeOut(animationSpec = tween(durationMillis = 2000, delayMillis = 400))) {
+                Box(
+                    Modifier.height( with(density) { (animatedTopBarHeight.value.toDp() - 32.dp).coerceIn(64.dp,220.dp) }),
+                    contentAlignment = Alignment.CenterStart
+
+                ) {
+                    PrimaryScrollableTabRow(
+                        selectedTabIndex = currentTabIndex,
+                        containerColor = Color.Transparent,
+                        edgePadding = 0.dp,
+                        indicator = {},
+                        divider = {}
+                    ) {
+                        tabTitles.forEachIndexed { index, rawId ->
+                            val tabId = rawId.toLibraryTabIdOrNull() ?: LibraryTabId.SONGS
+                            Box(
+                                modifier = Modifier
+                                    .padding(top = 24.dp, end = 12.dp)
+                                    .clickable(
+                                        interactionSource = null,
+                                        indication = null,
+                                        onClick = {
+                                            scope.launch {
+                                                pagerState.animateScrollToPage(
+                                                    targetPageForTabIndex(
+                                                        currentPage = pagerState.currentPage,
+                                                        targetTabIndex = index,
+                                                        tabCount = tabTitles.size,
+                                                        compactMode = isCompactNavigation
+                                                    )
+                                                )
+                                            }
+                                        })
+                            ) {
+                                Text(
+
+                                    text = stringResource(tabId.titleRes).uppercase(),
+                                    fontFamily = LazyGlamorFamily,
+                                    fontSize = animatedTopFontSize.value.sp,
+                                    color = if (currentTabIndex == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(
+                                        alpha = 0.45f
+                                    )
+
+                                )
+                            }
+                        }
+                        TabAnimation(
+                            index = -1,
+                            title = stringResource(R.string.library_tab_edit),
+                            selectedIndex = currentTabIndex,
+                            onClick = { showReorderTabsSheet = true }
+                        ) {
+                            Icon(
+                                Icons.Default.Edit,
+                                contentDescription = stringResource(R.string.library_cd_reorder_tabs),
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f)
+                            )
+                        }
+                    }
                 }
             }
             //Grad box
@@ -2906,7 +2903,9 @@ fun LibraryFoldersTab(
     onRegisterLocateCurrentSongAction: ((() -> Unit)?) -> Unit = {},
     pendingLocatePath: String? = null,
     onClearPendingLocate: () -> Unit = {},
-    onRequestCrossFolderLocate: (String) -> Unit = {}
+    onRequestCrossFolderLocate: (String) -> Unit = {},
+    onScrollEvent: (LazyListState) -> Unit
+
 ) {
     // List state moved inside AnimatedContent to prevent state sharing issues during transitions
 
@@ -3066,6 +3065,10 @@ fun LibraryFoldersTab(
                 .collect { isVisible ->
                     visibilityCallback(!isVisible)
                 }
+        }
+
+        LaunchedEffect(listState.isScrollInProgress) {
+            onScrollEvent(listState)
         }
 
         DisposableEffect(Unit) {
